@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<main>
+
+    <!-- Sección de Playlists -->
+    <div class="playlists-section">
+        <h2 class="titulo">Últimas playlists añadidas</h2>
+        
+        <div class="playlists-container">
+            {% for item in playlists %}
+                <div class="playlist-card">
+                    <img src="{{ asset('imagenes/generos/' ~ item.playlist.nombre|replace({' ': '_'}) ~ '.jpg') }}" alt="Imagen {{ item.playlist.nombre }}">
+                    
+                    <div class="playlist-info">
+                        <h3>{{ item.playlist.nombre }}</h3>
+                        <p><strong>Duración:</strong> {{ item.totalDuracion }} min</p>
+                        <p><strong>Canciones:</strong> {{ item.totalCanciones }}</p>
+                        <p><strong>Propietario:</strong> {{ item.playlist.propietario ? item.playlist.propietario.nombre : 'Sistema' }}</p>
+                    </div>
+                </div>
+            {% else %}
+                <p>No hay playlists recientes.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sección de Canciones -->
+    <div class="songs-section">
+        <h2 class="titulo">Últimas canciones añadidas</h2>
+
+        <div class="songs-container">
+            {% for cancion in canciones %}
+                <div class="song-card" onclick="reproducirCancion('{{ cancion.archivo }}')">
+                    <div class="song-overlay">
+                        <h3>{{ cancion.titulo }}</h3>
+                    </div>
+                    
+                    {% if cancion.albumImagen %}
+<img src="{{ asset('imagenes/' ~ cancion.albumImagen) }}" alt="Portada {{ cancion.titulo }}">
+                    {% else %}
+                        <img src="{{ asset('imagenes/default.jpg') }}" alt="Portada por defecto">
+                    {% endif %}
+                    
+                    <div class="song-info">
+                        <p><strong>Artista:</strong> {{ cancion.autor }}</p>
+                        <p><strong>Álbum:</strong> {{ cancion.album }}</p>
+                        <p><strong>Género:</strong> {{ cancion.genero ? cancion.genero.nombre : 'Desconocido' }}</p>
+                        <p><strong>Año:</strong> {{ cancion.anio }}</p>
+                    </div>
+                </div>
+            {% else %}
+                <p>No hay canciones recientes.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Módulo del reproductor -->
+    {% include 'reproductor.html.twig' %}
+
+</main>
+{% endblock %}

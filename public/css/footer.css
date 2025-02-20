@@ -1,0 +1,9 @@
+footer {
+    background: var(--medium-dark);
+    color: var(--secondary-text);
+    text-align: center;
+    padding: 10px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MySpotify{% endblock %}</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+</head>
+<body>
+
+<header>
+    <div class="header-top">
+        <!-- Logo + Título en el centro -->
+        <div class="logo-container">
+            <img src="{{ asset('imagenes/logoSpoty.png') }}" alt="Spotify Logo">
+            <h1>MySpotify</h1>
+        </div>
+
+        <!-- Inicio de sesión a la derecha -->
+        <div class="session">
+            <img src="{{ asset('imagenes/iconosesion.png') }}" alt="Sesión">
+            <a href="#">Iniciar Sesión</a>
+        </div>
+    </div>
+
+    <!-- Barra de navegación centrada -->
+    <nav>
+        <ul>
+            <li><a href="#">Canciones</a></li>
+            <li><a href="#">Playlist</a></li>
+            <li><a href="#">Explorar</a></li>
+        </ul>
+    </nav>
+
+    <!-- Buscador centrado -->
+    <div class="search-bar">
+        <input type="text" placeholder="Buscar...">
+        <button>Buscar</button>
+    </div>
+</header>
+
+<div class="container">
+    {% if app.request.get('_route') not in ['app_login', 'app_register', 'app_perfil'] %}
+        <aside>
+            <ul>
+                <li><a href="#">🎵 Canciones</a></li>
+                <li><a href="#">📂 Playlist</a></li>
+                <li><a href="#">🔍 Explorar</a></li>
+            </ul>
+        </aside>
+    {% endif %}
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+
+
+</body>
+</html>
