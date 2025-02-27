@@ -3,13 +3,18 @@
 namespace App\Controller;
 
 use App\Entity\Playlist;
+use App\Entity\PlaylistCancion;
+use App\Entity\Cancion;
+use App\Enum\VisibilidadPlaylist;
 use App\Repository\PlaylistRepository;
+use App\Repository\CancionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/playlist', name: 'playlist_')]
 class PlaylistController extends AbstractController
@@ -37,26 +42,121 @@ class PlaylistController extends AbstractController
         return $this->json($playlist);
     }
 
+
     /**
-     * Crea una nueva playlist.
+     * Procesa el formulario y guarda una nueva Playlist.
      */
     #[Route('/crear', name: 'crear_playlist', methods: ['POST'])]
-    public function crearPlaylist(Request $request, EntityManagerInterface $em): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-        if (empty($data['nombre'])) {
-            return $this->json(['message' => 'El nombre de la playlist es obligatorio'], Response::HTTP_BAD_REQUEST);
+    #[IsGranted('ROLE_USER')] // Solo usuarios autenticados pueden crear playlists
+    public function guardarPlaylist(
+        Request $request,
+        EntityManagerInterface $em,
+        CancionRepository $cancionRepository
+    ): Response {
+        // Obtener datos del formulario
+        $nombre = $request->request->get('nombre');
+        $visibilidad = $request->request->get('visibilidad');
+        $cancionesSeleccionadas = $request->request->all('canciones'); // Obtiene un array de IDs de canciones
+
+        // Validación básica
+        if (!$nombre || !$visibilidad) {
+            $this->addFlash('error', 'El nombre y la visibilidad de la playlist son obligatorios.');
+            return $this->redirectToRoute('crear_playlist_form');
         }
 
+        // Obtener el usuario autenticado
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            $this->addFlash('error', 'Debes estar autenticado para crear una playlist.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        // Crear la Playlist
         $playlist = new Playlist();
-        $playlist->setNombre($data['nombre']);
-        $playlist->setVisibilidad($data['visibilidad'] ?? 'publica');
+        $playlist->setNombre($nombre);
+        $playlist->setVisibilidad(VisibilidadPlaylist::from($visibilidad));
+        $playlist->setPropietario($usuario);
 
         $em->persist($playlist);
+
+        // Agregar canciones a la Playlist
+        if (!empty($cancionesSeleccionadas)) {
+            foreach ($cancionesSeleccionadas as $cancionId) {
+                $cancion = $cancionRepository->find($cancionId);
+                if ($cancion) {
+                    $playlistCancion = new PlaylistCancion();
+                    $playlistCancion->setPlaylist($playlist);
+                    $playlistCancion->setCancion($cancion);
+                    $em->persist($playlistCancion);
+                }
+            }
+        }
+
+        // Guardar en la base de datos
         $em->flush();
 
-        return $this->json(['message' => 'Playlist creada correctamente'], Response::HTTP_CREATED);
+        $this->addFlash('success', 'Playlist creada correctamente.');
+        return $this->redirectToRoute('listar_playlists');
     }
+
+    /**
+     * Muestra el formulario para crear una Playlist.
+     */
+    #[Route('/crear', name: 'crear_playlist_form', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function mostrarFormularioCrear(CancionRepository $cancionRepository): Response
+    {
+        $canciones = $cancionRepository->findAll(); // Obtener todas las canciones disponibles
+
+        return $this->render('playlist/crear.html.twig', [
+            'canciones' => $canciones,
+        ]);
+    }
+
+    /**
+     * Búsqueda por patrón en Playlists y Canciones.
+     */
+    #[Route('/buscar', name: 'buscar_playlist', methods: ['GET'])]
+    public function buscarPlaylist(
+        Request $request,
+        PlaylistRepository $playlistRepository,
+        CancionRepository $cancionRepository
+    ): JsonResponse {
+        $query = $request->query->get('q');
+        if (!$query) {
+            return $this->json(['message' => 'Debe proporcionar un término de búsqueda'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Buscar en playlists y canciones
+        $playlists = $playlistRepository->buscarPorPatron($query);
+        $canciones = $cancionRepository->buscarPorPatron($query);
+
+        return $this->json([
+            'playlists' => $playlists,
+            'canciones' => $canciones
+        ]);
+    }
+
+    /**
+     * Vista principal con:
+     * - Playlists generales
+     * - Canciones disponibles
+     * - Playlists del usuario autenticado
+     */
+    #[Route('/vista-principal', name: 'vista_principal', methods: ['GET'])]
+    public function vistaPrincipal(
+        PlaylistRepository $playlistRepository,
+        CancionRepository $cancionRepository
+    ): JsonResponse {
+        $usuario = $this->getUser();
+
+        return $this->json([
+            'playlists_generales' => $playlistRepository->findPublicPlaylists(),
+            'canciones' => $cancionRepository->findAll(),
+            'mis_playlists' => $usuario ? $playlistRepository->findBy(['propietario' => $usuario]) : []
+        ]);
+    }
+
 
     /**
      * Edita una playlist existente.
@@ -124,7 +224,21 @@ class PlaylistController extends AbstractController
         if (!$playlist) {
             return $this->json(['message' => 'Playlist no encontrada'], Response::HTTP_NOT_FOUND);
         }
-        return $this->json($playlist->getCanciones());
+
+        // Obtener las canciones de la playlist
+        $canciones = $playlist->getCanciones();
+
+        // Formatear la respuesta JSON
+        $response = [];
+        foreach ($canciones as $cancion) {
+            $response[] = [
+                'id' => $cancion->getId(),
+                'titulo' => $cancion->getTitulo(),
+                'archivo' => $cancion->getArchivo(),
+            ];
+        }
+
+        return $this->json($response);
     }
 
     // Obtiene las playlists con más "likes"

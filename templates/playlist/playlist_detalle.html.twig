@@ -1,0 +1,11 @@
+<div id="playlist-detalle-container">
+    <h2>{{ playlist.nombre }}</h2>
+    <p><strong>Propietario:</strong> {{ playlist.propietario ? playlist.propietario.nombre : 'Spotify' }}</p>
+    <p><strong>Duración total:</strong> {{ totalDuracion }} min</p>
+    <div class="playlist-canciones">
+        {% for cancion in canciones %}
+            {% include 'cancion_card.html.twig' with {'cancion': cancion} %}
+        {% endfor %}
+    </div>
+    {% include 'reproductor.html.twig' %}
+</div

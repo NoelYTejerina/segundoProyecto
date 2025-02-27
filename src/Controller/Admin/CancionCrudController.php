@@ -31,14 +31,16 @@ class CancionCrudController extends AbstractCrudController
             TextField::new('album', 'Álbum'),
             
             IntegerField::new('anio', 'Año de Publicación'),
-            ImageField::new('albumImagen', 'Imagen del Álbum')->setUploadDir('public/imagenes/'),
+            TextField::new('albumImagen', 'Imagen del Álbum'),
             TextField::new('archivo', 'Archivo de Audio')->setFormTypeOption('by_reference', false),
 
             AssociationField::new('genero', 'Estilo')
             ->setFormTypeOptions([
-                'choice_label' => 'nombre',
-                'by_reference' => false,
-            ]),
+                'class' => Estilo::class, // Especificar la entidad relacionada
+                'choice_label' => 'nombre', // Campo a mostrar en el select
+                'placeholder' => 'Selecciona un género', // Opción por defecto
+            ])
+            ->setRequired(false), // Permitir que el campo sea opcional
         
         ];
     }

@@ -22,104 +22,120 @@ class CancionController extends AbstractController
         return $this->json($canciones);
     }
 
-    #[Route('/{id}', name: 'ver_cancion', methods: ['GET'])]
-    public function verCancion(int $id, CancionRepository $cancionRepository): JsonResponse
-    {
-        $cancion = $cancionRepository->find($id);
-        if (!$cancion) {
-            return $this->json(['message' => 'Canción no encontrada'], Response::HTTP_NOT_FOUND);
-        }
-        return $this->json($cancion);
+  #[Route('/{id}', name: 'ver_cancion', methods: ['GET'])]
+public function verCancion(int $id, CancionRepository $cancionRepository): JsonResponse
+{
+    $cancion = $cancionRepository->find($id);
+    if (!$cancion) {
+        return $this->json(['message' => 'Canción no encontrada'], Response::HTTP_NOT_FOUND);
     }
+
+    return $this->json([
+        'id' => $cancion->getId(),
+        'titulo' => $cancion->getTitulo(),
+        'duracion' => $cancion->getDuracion(),
+        'album' => $cancion->getAlbum(),
+        'autor' => $cancion->getAutor(),
+        'likes' => $cancion->getLikes(),
+        'fechaCreacion' => $cancion->getFechaCreacion()->format('Y-m-d H:i:s'), // Formatear la fecha
+        'anio' => $cancion->getAnio(),
+        'genero' => $cancion->getGenero() ? $cancion->getGenero()->getNombre() : null, // Obtener el nombre del género
+        'albumImagen' => $cancion->getAlbumImagen(),
+        'archivo' => $cancion->getArchivo(),
+        'usuario' => $cancion->getUsuario() ? $cancion->getUsuario()->getNombre() : null, // Obtener el nombre del usuario
+    ]);
+}
 
     #[Route('/crear', name: 'crear_cancion', methods: ['POST'])]
-    public function crearCancion(Request $request, EntityManagerInterface $em, CancionRepository $cancionRepository): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-        if (empty($data['titulo']) || empty($data['autor'])) {
-            return $this->json(['message' => 'El título y el autor son obligatorios'], Response::HTTP_BAD_REQUEST);
-        }
-    
-        // Verificar si ya existe una canción con el mismo título
-        $tituloExistente = $cancionRepository->findOneBy(['titulo' => $data['titulo']]);
-        if ($tituloExistente) {
-            return $this->json([
-                'message' => 'Ya existe una canción con el título "'.$data['titulo'].'".',
-                'path' => 'src/Controller/CancionController'
-            ], Response::HTTP_CONFLICT);
-        }
-    
-        // Crear nueva canción
-        $cancion = new Cancion();
-        $cancion->setTitulo($data['titulo']);
-        $cancion->setAutor($data['autor']);
-        $cancion->setDuracion($data['duracion'] ?? null);
-        $cancion->setAlbum($data['album'] ?? null);
-        $cancion->setAnio($data['anio'] ?? null);
-        $cancion->setAlbumImagen($data['albumImagen'] ?? null);
-        $cancion->setArchivo($data['archivo'] ?? null);
-        $cancion->setFechaCreacion(new \DateTimeImmutable());
-    
-        // Manejo del género: se elige de la lista o se crea un nuevo género
-        if (!empty($data['genero'])) {
-            if (is_numeric($data['genero'])) {
-                $genero = $em->getRepository(Estilo::class)->find($data['genero']);
-            } else {
-                $genero = new Estilo();
-                $genero->setNombre($data['genero']);
-                $em->persist($genero);
-            }
-            $cancion->setGenero($genero);
-        }
-    
-        $em->persist($cancion);
-        $em->flush();
-    
-        return $this->json(['message' => 'Canción creada correctamente'], Response::HTTP_CREATED);
+public function crearCancion(Request $request, EntityManagerInterface $em, CancionRepository $cancionRepository): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
+    if (empty($data['titulo']) || empty($data['autor'])) {
+        return $this->json(['message' => 'El título y el autor son obligatorios'], Response::HTTP_BAD_REQUEST);
     }
+
+    // Verificar si ya existe una canción con el mismo título
+    $tituloExistente = $cancionRepository->findOneBy(['titulo' => $data['titulo']]);
+    if ($tituloExistente) {
+        return $this->json([
+            'message' => 'Ya existe una canción con el título "'.$data['titulo'].'".',
+            'path' => 'src/Controller/CancionController'
+        ], Response::HTTP_CONFLICT);
+    }
+
+    // Crear nueva canción
+    $cancion = new Cancion();
+    $cancion->setTitulo($data['titulo']);
+    $cancion->setAutor($data['autor']);
+    $cancion->setDuracion($data['duracion'] ?? null);
+    $cancion->setAlbum($data['album'] ?? null);
+    $cancion->setAnio($data['anio'] ?? null);
+    $cancion->setAlbumImagen($data['albumImagen'] ?? null); // Solo guarda el nombre del archivo
+    $cancion->setArchivo($data['archivo'] ?? null); // Solo guarda el nombre del archivo
+    $cancion->setFechaCreacion(new \DateTimeImmutable());
+
+    // Manejo del género: se elige de la lista o se crea un nuevo género
+    if (!empty($data['genero'])) {
+        if (is_numeric($data['genero'])) {
+            $genero = $em->getRepository(Estilo::class)->find($data['genero']);
+        } else {
+            $genero = new Estilo();
+            $genero->setNombre($data['genero']);
+            $em->persist($genero);
+        }
+        $cancion->setGenero($genero);
+    }
+
+    $em->persist($cancion);
+    $em->flush();
+
+    return $this->json(['message' => 'Canción creada correctamente'], Response::HTTP_CREATED);
+}
+
     
 
-    #[Route('/editar/{id}', name: 'editar_cancion', methods: ['PUT'])]
-    public function editarCancion(int $id, Request $request, EntityManagerInterface $em, CancionRepository $cancionRepository): JsonResponse
-    {
-        $cancion = $cancionRepository->find($id);
-        if (!$cancion) {
-            return $this->json(['message' => 'Canción no encontrada'], Response::HTTP_NOT_FOUND);
-        }
-        $data = json_decode($request->getContent(), true);
-    
-        // Verificar si el título ya existe en otra canción
-        $tituloExistente = $cancionRepository->findOneBy(['titulo' => $data['titulo'] ?? $cancion->getTitulo()]);
-        if ($tituloExistente && $tituloExistente->getId() !== $cancion->getId()) {
-            return $this->json([
-                'message' => 'Ya existe otra canción con el título '.$data['titulo'],
-                'path' => 'src/Controller/CancionController'
-            ], Response::HTTP_CONFLICT);
-        }
-    
-        $cancion->setTitulo($data['titulo'] ?? $cancion->getTitulo());
-        $cancion->setAutor($data['autor'] ?? $cancion->getAutor());
-        $cancion->setDuracion($data['duracion'] ?? $cancion->getDuracion());
-        $cancion->setAlbum($data['album'] ?? $cancion->getAlbum());
-        $cancion->setAnio($data['anio'] ?? $cancion->getAnio());
-        $cancion->setAlbumImagen($data['albumImagen'] ?? $cancion->getAlbumImagen());
-        $cancion->setArchivo($data['archivo'] ?? $cancion->getArchivo());
-    
-        // Asignar género correctamente (solo permitir selección de un género existente)
-        if (!empty($data['genero']) && is_numeric($data['genero'])) {
-            $genero = $em->getRepository(Estilo::class)->find($data['genero']);
-            if ($genero) {
-                $cancion->setGenero($genero);
-            }
-        }
-    
-        $em->flush();
-    
-        return $this->json([
-            'message' => 'Canción actualizada correctamente',
-            'path' => 'src/Controller/CancionController'
-        ]);
+#[Route('/editar/{id}', name: 'editar_cancion', methods: ['PUT'])]
+public function editarCancion(int $id, Request $request, EntityManagerInterface $em, CancionRepository $cancionRepository): JsonResponse
+{
+    $cancion = $cancionRepository->find($id);
+    if (!$cancion) {
+        return $this->json(['message' => 'Canción no encontrada'], Response::HTTP_NOT_FOUND);
     }
+    $data = json_decode($request->getContent(), true);
+
+    // Verificar si el título ya existe en otra canción
+    $tituloExistente = $cancionRepository->findOneBy(['titulo' => $data['titulo'] ?? $cancion->getTitulo()]);
+    if ($tituloExistente && $tituloExistente->getId() !== $cancion->getId()) {
+        return $this->json([
+            'message' => 'Ya existe otra canción con el título '.$data['titulo'],
+            'path' => 'src/Controller/CancionController'
+        ], Response::HTTP_CONFLICT);
+    }
+
+    $cancion->setTitulo($data['titulo'] ?? $cancion->getTitulo());
+    $cancion->setAutor($data['autor'] ?? $cancion->getAutor());
+    $cancion->setDuracion($data['duracion'] ?? $cancion->getDuracion());
+    $cancion->setAlbum($data['album'] ?? $cancion->getAlbum());
+    $cancion->setAnio($data['anio'] ?? $cancion->getAnio());
+    $cancion->setAlbumImagen($data['albumImagen'] ?? $cancion->getAlbumImagen()); // Solo guarda el nombre del archivo
+    $cancion->setArchivo($data['archivo'] ?? $cancion->getArchivo()); // Solo guarda el nombre del archivo
+
+    // Asignar género correctamente (solo permitir selección de un género existente)
+    if (!empty($data['genero']) && is_numeric($data['genero'])) {
+        $genero = $em->getRepository(Estilo::class)->find($data['genero']);
+        if ($genero) {
+            $cancion->setGenero($genero);
+        }
+    }
+
+    $em->flush();
+
+    return $this->json([
+        'message' => 'Canción actualizada correctamente',
+        'path' => 'src/Controller/CancionController'
+    ]);
+}
+
     
 
     #[Route('/eliminar/{id}', name: 'eliminar_cancion', methods: ['DELETE'])]

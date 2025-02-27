@@ -17,9 +17,14 @@
         </div>
 
         <!-- Inicio de sesión a la derecha -->
-        <div class="session">
+       <div class="session">
             <img src="{{ asset('imagenes/iconosesion.png') }}" alt="Sesión">
-            <a href="#">Iniciar Sesión</a>
+            {% if app.user %}
+                <span>Hola, {{ app.user.nombre }}</span>
+                <a href="{{ path('app_logout') }}" class="btn-logout">Cerrar Sesión</a>
+            {% else %}
+                <a href="{{ path('app_login') }}">Iniciar Sesión</a>
+            {% endif %}
         </div>
     </div>
 
@@ -29,6 +34,9 @@
             <li><a href="#">Canciones</a></li>
             <li><a href="#">Playlist</a></li>
             <li><a href="#">Explorar</a></li>
+            {% if is_granted('ROLE_USER') %}
+                <li><a href="{{ path('crear_playlist') }}" class="btn btn-primary">+ Crear Playlist</a></li>
+            {% endif %}
         </ul>
     </nav>
 
@@ -54,6 +62,9 @@
         {% block content %}{% endblock %}
     </div>
 </div>
+
+
+
 
 
 

@@ -106,4 +106,15 @@ class CancionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function buscarPorPatron(string $query)
+{
+    return $this->createQueryBuilder('c')
+        ->where('c.titulo LIKE :query')
+        ->orWhere('c.autor LIKE :query')
+        ->setParameter('query', "%$query%")
+        ->getQuery()
+        ->getResult();
+}
+
 }

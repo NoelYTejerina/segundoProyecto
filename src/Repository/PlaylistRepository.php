@@ -110,7 +110,21 @@ class PlaylistRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function buscarPorPatron(string $query)
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.nombre LIKE :query')
+            ->setParameter('query', "%$query%")
+            ->getQuery()
+            ->getResult();
+    }
 
-
-
+    public function findPublicPlaylists()
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.visibilidad = :publica')
+            ->setParameter('publica', 'publica')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -8,19 +8,25 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UsuarioRepository::class)]
-class Usuario
+#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue] // indica que es autoincremental, symfony lo hace automatico para campos con valor iD
+    #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, unique: true)] // para que no pueda haber 2 usuarios con el mismo email
+    #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $roles = null;
+
+    #[ORM\Column]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
@@ -29,44 +35,26 @@ class Usuario
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $fechaNacimiento = null;
 
-    #[ORM\Column(enumType: RolUsuario::class)]
-    private RolUsuario $rol;
+ 
 
     #[ORM\OneToOne(mappedBy: 'usuario', cascade: ['persist', 'remove'])]
     private ?Perfil $perfil = null;
 
-    /**
-     * @var Collection<int, Playlist>
-     */
     #[ORM\OneToMany(targetEntity: Playlist::class, mappedBy: 'propietario')]
     private Collection $playlistsCreadas;
 
-    /**
-     * @var Collection<int, Cancion>
-     */
     #[ORM\OneToMany(targetEntity: Cancion::class, mappedBy: 'usuario')]
     private Collection $cancionesSubidas;
 
-    /**
-     * @var Collection<int, Playlist>
-     */
     #[ORM\ManyToMany(targetEntity: Playlist::class, inversedBy: "usuariosQueEscuchan")]
-    #[ORM\JoinTable(name: "usuario_playlist_escuchadas")] // le asigna nombre a la tabla intermedia
+    #[ORM\JoinTable(name: "usuario_playlist_escuchadas")]
     private Collection $playlistsEscuchadas;
 
-    /**
-     * @var Collection<int, UsuarioCancion>
-     */
     #[ORM\OneToMany(mappedBy: "usuario", targetEntity: UsuarioCancion::class)]
     private Collection $cancionesReproducidas;
 
-    /**
-     * @var Collection<int, UsuarioPlaylist>
-     */
     #[ORM\OneToMany(targetEntity: UsuarioPlaylist::class, mappedBy: 'usuario', orphanRemoval: true)]
     private Collection $usuarioPlaylists;
-
-
 
     public function __construct()
     {
@@ -82,35 +70,48 @@ class Usuario
         return $this->id;
     }
 
-    public function setId(int $id)
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-
     public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    public function setEmail(string $email)
+    public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
-    public function getPassword(): ?string
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    public function getRoles(): array
+{
+   
+    return $this->roles;
+}
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+        return $this;
+    }
+
+    public function getPassword(): string
     {
         return $this->password;
     }
 
-    public function setPassword(string $password)
+    public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // Si almacenas datos sensibles temporales en el usuario, límpialos aquí
     }
 
     public function getNombre(): ?string
@@ -118,10 +119,9 @@ class Usuario
         return $this->nombre;
     }
 
-    public function setNombre(string $nombre)
+    public function setNombre(string $nombre): static
     {
         $this->nombre = $nombre;
-
         return $this;
     }
 
@@ -130,34 +130,12 @@ class Usuario
         return $this->fechaNacimiento;
     }
 
-    public function setFechaNacimiento(\DateTimeInterface $fechaNacimiento)
+    public function setFechaNacimiento(\DateTimeInterface $fechaNacimiento): static
     {
         $this->fechaNacimiento = $fechaNacimiento;
+        return $this;    }
 
-        return $this;
-    }
-
-    public function getRol(): RolUsuario // al ser una clase devuelve un valor tipo RolUsuario
-    {
-        return $this->rol;
-    }
-    /* Ejemplo de uso de getRol()
-            $usuario = new Usuario();
-            $rol = $usuario->getRol(); // Esto devolverá el rol actual del usuario
-            echo $rol->value; // Mostrará "usuario", "admin" o "manager" dependiendo del rol asignado    
-    */
-
-    public function setRol(RolUsuario $rol): self //: self: Indica que este método devuelve una instancia de la misma clase (Usuario). Esto se hace para permitir encadenamiento de métodos (method chaining).
-    {
-        $this->rol = $rol;
-        return $this;
-    }
-    /* Ejemplo de uso de setRol()
-            $usuario = new Usuario();
-            $usuario->setRol(RolUsuario::MANAGER); // Asigna el rol "manager" al usuario
-
-            echo $usuario->getRol()->value; // Mostrará "manager"    
-    */
+    
 
     public function getPerfil(): ?Perfil
     {
@@ -166,19 +144,13 @@ class Usuario
 
     public function setPerfil(Perfil $perfil): static
     {
-        // set the owning side of the relation if necessary
         if ($perfil->getUsuario() !== $this) {
             $perfil->setUsuario($this);
         }
-
         $this->perfil = $perfil;
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Playlist>
-     */
     public function getPlaylistsCreadas(): Collection
     {
         return $this->playlistsCreadas;
@@ -190,7 +162,6 @@ class Usuario
             $this->playlistsCreadas->add($playlist);
             $playlist->setPropietario($this);
         }
-
         return $this;
     }
 
@@ -201,13 +172,9 @@ class Usuario
                 $playlist->setPropietario(null);
             }
         }
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Cancion>
-     */
     public function getCancionesSubidas(): Collection
     {
         return $this->cancionesSubidas;
@@ -219,7 +186,6 @@ class Usuario
             $this->cancionesSubidas->add($cancion);
             $cancion->setUsuario($this);
         }
-
         return $this;
     }
 
@@ -230,13 +196,9 @@ class Usuario
                 $cancion->setUsuario(null);
             }
         }
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Playlist>
-     */
     public function getPlaylistsEscuchadas(): Collection
     {
         return $this->playlistsEscuchadas;
@@ -248,7 +210,6 @@ class Usuario
             $this->playlistsEscuchadas->add($playlist);
             $playlist->addUsuarioQueEscucha($this);
         }
-
         return $this;
     }
 
@@ -257,7 +218,6 @@ class Usuario
         if ($this->playlistsEscuchadas->removeElement($playlist)) {
             $playlist->removeUsuarioQueEscucha($this);
         }
-
         return $this;
     }
 
@@ -272,7 +232,6 @@ class Usuario
             $this->cancionesReproducidas->add($usuarioCancion);
             $usuarioCancion->setUsuario($this);
         }
-
         return $this;
     }
 
@@ -282,15 +241,11 @@ class Usuario
         return $this;
     }
 
-
     public function __toString(): string
     {
         return $this->nombre ?? 'Sin nombre';
     }
 
-    /**
-     * @return Collection<int, UsuarioPlaylist>
-     */
     public function getUsuarioPlaylists(): Collection
     {
         return $this->usuarioPlaylists;
@@ -302,19 +257,16 @@ class Usuario
             $this->usuarioPlaylists->add($usuarioPlaylist);
             $usuarioPlaylist->setUsuario($this);
         }
-
         return $this;
     }
 
     public function removeUsuarioPlaylist(UsuarioPlaylist $usuarioPlaylist): static
     {
         if ($this->usuarioPlaylists->removeElement($usuarioPlaylist)) {
-            // set the owning side to null (unless already changed)
             if ($usuarioPlaylist->getUsuario() === $this) {
                 $usuarioPlaylist->setUsuario(null);
             }
         }
-
         return $this;
     }
 }

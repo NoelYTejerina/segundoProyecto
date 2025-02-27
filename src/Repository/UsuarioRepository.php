@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\Usuario;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<Usuario>
@@ -125,6 +127,15 @@ class UsuarioRepository extends ServiceEntityRepository
         ->orderBy('edad', 'ASC')
         ->getQuery()
         ->getResult();
+}
+
+public function loadUserByIdentifier(string $identifier): ?Usuario
+{
+    return $this->createQueryBuilder('u')
+        ->where('u.email = :identifier OR u.nombre = :identifier')
+        ->setParameter('identifier', $identifier)
+        ->getQuery()
+        ->getOneOrNullResult();
 }
 
 

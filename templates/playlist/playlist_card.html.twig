@@ -1,0 +1,13 @@
+<div class="playlist-card-container">
+    <div class="playlist-card">
+        <img src="{{ asset('imagenes/generos/' ~ playlist.nombre|replace({' ': '_'}) ~ '.jpg') }}" alt="Imagen {{ playlist.nombre }}">
+        <div class="playlist-info">
+            <h3>{{ playlist.nombre }}</h3>
+            <p><strong>Duración:</strong> {{ totalDuracion }} min</p>
+            <p><strong>Canciones:</strong> {{ totalCanciones }}</p>
+            <p><strong>Propietario:</strong> {{ playlist.propietario ? playlist.propietario.nombre : 'Sistema' }}</p>
+            <a href="{{ path('playlist_ver_playlist', {id: playlist.id}) }}" class="detalle-link">Ver Playlist</a>
+            <button class="reproducir-btn" onclick="reproducirPlaylist({{ playlist.id }})">▶ Reproducir</button>
+        </div>
+    </div>
+</div>

@@ -196,4 +196,18 @@ class Playlist
 
         return $this;
     }
+
+     /**
+     * Obtiene las canciones de la playlist.
+     *
+     * @return Collection<int, Cancion>
+     */
+    public function getCanciones(): Collection
+    {
+        $canciones = new ArrayCollection();
+        foreach ($this->playlistCanciones as $playlistCancion) {
+            $canciones[] = $playlistCancion->getCancion();
+        }
+        return $canciones;
+    }
 }

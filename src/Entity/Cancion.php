@@ -248,39 +248,28 @@ class Cancion
     }
 
     // la idea es mantener el historial de reproducciones para estadisticas
-
-    private const ARCHIVO_PATH = 'songs/';
-    private const IMAGEN_PATH = 'imagenes/';
-
     public function getAlbumImagen(): ?string
     {
-        return $this->albumImagen ? self::IMAGEN_PATH . $this->albumImagen : null;
+        return $this->albumImagen;
     }
-
+    
     public function setAlbumImagen(?string $albumImagen): static
     {
-        if ($albumImagen && !str_starts_with($albumImagen, self::IMAGEN_PATH)) {
-            $albumImagen = self::IMAGEN_PATH . $albumImagen;
-        }
-
         $this->albumImagen = $albumImagen;
         return $this;
     }
-
+    
     public function getArchivo(): ?string
     {
-        return $this->archivo ? self::ARCHIVO_PATH . $this->archivo : null;
+        return $this->archivo;
     }
-
+    
     public function setArchivo(?string $archivo): static
     {
-        if ($archivo && !str_starts_with($archivo, self::ARCHIVO_PATH)) {
-            $archivo = self::ARCHIVO_PATH . $archivo;
-        }
-
         $this->archivo = $archivo;
         return $this;
     }
+    
 
     public function __toString(): string
     {

@@ -18,7 +18,7 @@ class MainController extends AbstractController
         CancionRepository $cancionRepository // ✅ Agregar CancionRepository aquí
     ): Response {
         // Obtener las últimas 3 playlists añadidas
-        $playlists = $playlistRepository->findRecentPlaylists(3);
+        $playlists = $playlistRepository->findRecentPlaylists(5);
 
         $playlistData = []; // ✅ Se cambia `$data` por `$playlistData` para evitar errores
         foreach ($playlists as $playlist) {
@@ -32,7 +32,7 @@ class MainController extends AbstractController
         }
 
         // ✅ Obtener las últimas 3 canciones añadidas correctamente
-        $canciones = $cancionRepository->findRecentCanciones(3);
+        $canciones = $cancionRepository->findRecentCanciones(5);
 
         return $this->render('main/index.html.twig', [
             'playlists' => $playlistData, 

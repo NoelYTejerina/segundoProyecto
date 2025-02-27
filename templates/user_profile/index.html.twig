@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestión de Usuario - MySpotify{% endblock %}
+
+{% block content %}
+<main class="user-profile-container">
+    <h1>Hola, {{ user.nombre }}</h1>
+
+    <div class="user-info">
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Fecha de Nacimiento:</strong> {{ user.fechaNacimiento|date('d/m/Y') }}</p>
+    </div>
+
+    <div class="actions">
+        <a href="{{ path('app_user_edit') }}" class="btn-edit">Editar Perfil</a>
+        <a href="{{ path('app_user_change_password') }}" class="btn-change-password">Cambiar Contraseña</a>
+    </div>
+</main>
+{% endblock %}

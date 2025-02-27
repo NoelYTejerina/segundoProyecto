@@ -15,7 +15,6 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/usuario', name: 'usuario_')]
 class UsuarioController extends AbstractController
 {
-
     /**
      * Lista todos los usuarios.
      */
@@ -27,7 +26,7 @@ class UsuarioController extends AbstractController
             'id' => $usuario->getId(),
             'nombre' => $usuario->getNombre(),
             'email' => $usuario->getEmail(),
-            'rol' => $usuario->getRol()
+            'roles' => $usuario->getRoles() // Usamos getRoles() en lugar de getRol()
         ], $usuarios));
     }
 
@@ -45,7 +44,7 @@ class UsuarioController extends AbstractController
             'id' => $usuario->getId(),
             'nombre' => $usuario->getNombre(),
             'email' => $usuario->getEmail(),
-            'rol' => $usuario->getRol()
+            'roles' => $usuario->getRoles() // Usamos getRoles() en lugar de getRol()
         ]);
     }
 
@@ -60,11 +59,9 @@ class UsuarioController extends AbstractController
             'id' => $usuario->getId(),
             'nombre' => $usuario->getNombre(),
             'email' => $usuario->getEmail(),
-            'rol' => $usuario->getRol()
+            'roles' => $usuario->getRoles() // Usamos getRoles() en lugar de getRol()
         ], $usuarios));
     }
-
-
 
     /**
      * Registra un nuevo usuario y crea automáticamente un perfil vacío asociado.
@@ -89,7 +86,7 @@ class UsuarioController extends AbstractController
         $usuario->setNombre($data['nombre']);
         $usuario->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
         $usuario->setFechaNacimiento(!empty($data['fecha_nacimiento']) ? new \DateTime($data['fecha_nacimiento']) : null);
-        $usuario->setRol($data['rol'] ?? 'usuario');
+        $usuario->setRoles([$data['roles'] ?? 'ROLE_USER']); // Usamos setRoles() en lugar de setRol()
 
         // Crear perfil vacío asociado al usuario
         $perfil = new Perfil();
@@ -104,7 +101,7 @@ class UsuarioController extends AbstractController
     }
 
     /**
-     * Edita un usuario existente
+     * Edita un usuario existente.
      */
     #[Route('/editar/{id}', name: 'editar_usuario', methods: ['PUT'])]
     public function editarUsuario(int $id, Request $request, EntityManagerInterface $em, UsuarioRepository $usuarioRepository): JsonResponse
@@ -119,13 +116,17 @@ class UsuarioController extends AbstractController
         $usuario->setNombre($data['nombre'] ?? $usuario->getNombre());
         $usuario->setFechaNacimiento(!empty($data['fecha_nacimiento']) ? new \DateTime($data['fecha_nacimiento']) : $usuario->getFechaNacimiento());
 
+        if (isset($data['roles'])) {
+            $usuario->setRoles($data['roles']); // Actualizamos los roles si se proporcionan
+        }
+
         $em->flush();
 
         return $this->json(['message' => 'Usuario actualizado correctamente']);
     }
 
     /**
-     * Elimina un usuario
+     * Elimina un usuario.
      */
     #[Route('/eliminar/{id}', name: 'eliminar_usuario', methods: ['DELETE'])]
     public function eliminarUsuario(int $id, EntityManagerInterface $em, UsuarioRepository $usuarioRepository): JsonResponse
@@ -143,7 +144,7 @@ class UsuarioController extends AbstractController
     }
 
     /**
-     * Obtiene los detalles de un usuario, incluyendo sus relaciones
+     * Obtiene los detalles de un usuario, incluyendo sus relaciones.
      */
     #[Route('/{id}', name: 'detalle_usuario', methods: ['GET'])]
     public function verDetalleUsuario(int $id, UsuarioRepository $usuarioRepository): JsonResponse
@@ -159,7 +160,7 @@ class UsuarioController extends AbstractController
             'nombre' => $usuario->getNombre(),
             'email' => $usuario->getEmail(),
             'fecha_nacimiento' => $usuario->getFechaNacimiento()?->format('Y-m-d'),
-            'rol' => $usuario->getRol(),
+            'roles' => $usuario->getRoles(), // Usamos getRoles() en lugar de getRol()
             'perfil' => $usuario->getPerfil() ? [
                 'id' => $usuario->getPerfil()->getId(),
                 'foto' => $usuario->getPerfil()->getFoto(),
@@ -186,54 +187,53 @@ class UsuarioController extends AbstractController
         ]);
     }
 
-        // Busca un usuario por su correo electrónico
-        #[Route('/email/{email}', name: 'buscar_por_email', methods: ['GET'])]
-        public function buscarUsuarioPorEmail(string $email, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            $usuario = $usuarioRepository->findByEmail($email);
-            return $this->json($usuario);
-        }
-    
-        // Obtiene los usuarios con más playlists creadas
-        #[Route('/top-creadores/{limit}', name: 'top_creadores', methods: ['GET'])]
-        public function topCreadores(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findTopCreators($limit));
-        }
-    
-        // Obtiene los usuarios con más canciones subidas
-        #[Route('/top-uploaders/{limit}', name: 'top_uploaders', methods: ['GET'])]
-        public function topUploaders(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findTopUploaders($limit));
-        }
-    
-        // Obtiene los usuarios con más reproducciones en canciones
-        #[Route('/top-listeners/{limit}', name: 'top_listeners', methods: ['GET'])]
-        public function topListeners(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findTopListeners($limit));
-        }
-    
-        // Encuentra el usuario que subió una canción específica
-        #[Route('/uploader/{cancionId}', name: 'uploader_por_cancion', methods: ['GET'])]
-        public function findUploaderByCancion(int $cancionId, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findUploaderByCancion($cancionId));
-        }
-    
-        // Lista todas las canciones subidas por un usuario específico
-        #[Route('/canciones/{usuarioId}', name: 'canciones_por_usuario', methods: ['GET'])]
-        public function findCancionesByUsuario(int $usuarioId, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findCancionesByUsuario($usuarioId));
-        }
-    
-        // Muestra las playlists escuchadas por un usuario
-        #[Route('/playlists-escuchadas/{usuarioId}', name: 'playlists_escuchadas', methods: ['GET'])]
-        public function findPlaylistsEscuchadasByUsuario(int $usuarioId, UsuarioRepository $usuarioRepository): JsonResponse
-        {
-            return $this->json($usuarioRepository->findPlaylistsEscuchadasByUsuario($usuarioId));
-        }
-    
+    // Busca un usuario por su correo electrónico
+    #[Route('/email/{email}', name: 'buscar_por_email', methods: ['GET'])]
+    public function buscarUsuarioPorEmail(string $email, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        $usuario = $usuarioRepository->findByEmail($email);
+        return $this->json($usuario);
+    }
+
+    // Obtiene los usuarios con más playlists creadas
+    #[Route('/top-creadores/{limit}', name: 'top_creadores', methods: ['GET'])]
+    public function topCreadores(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findTopCreators($limit));
+    }
+
+    // Obtiene los usuarios con más canciones subidas
+    #[Route('/top-uploaders/{limit}', name: 'top_uploaders', methods: ['GET'])]
+    public function topUploaders(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findTopUploaders($limit));
+    }
+
+    // Obtiene los usuarios con más reproducciones en canciones
+    #[Route('/top-listeners/{limit}', name: 'top_listeners', methods: ['GET'])]
+    public function topListeners(int $limit, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findTopListeners($limit));
+    }
+
+    // Encuentra el usuario que subió una canción específica
+    #[Route('/uploader/{cancionId}', name: 'uploader_por_cancion', methods: ['GET'])]
+    public function findUploaderByCancion(int $cancionId, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findUploaderByCancion($cancionId));
+    }
+
+    // Lista todas las canciones subidas por un usuario específico
+    #[Route('/canciones/{usuarioId}', name: 'canciones_por_usuario', methods: ['GET'])]
+    public function findCancionesByUsuario(int $usuarioId, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findCancionesByUsuario($usuarioId));
+    }
+
+    // Muestra las playlists escuchadas por un usuario
+    #[Route('/playlists-escuchadas/{usuarioId}', name: 'playlists_escuchadas', methods: ['GET'])]
+    public function findPlaylistsEscuchadasByUsuario(int $usuarioId, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        return $this->json($usuarioRepository->findPlaylistsEscuchadasByUsuario($usuarioId));
+    }
 }
