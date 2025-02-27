@@ -21,30 +21,23 @@ class CancionController extends AbstractController
         $canciones = $cancionRepository->findAll();
         return $this->json($canciones);
     }
-
-  #[Route('/{id}', name: 'ver_cancion', methods: ['GET'])]
-public function verCancion(int $id, CancionRepository $cancionRepository): JsonResponse
-{
-    $cancion = $cancionRepository->find($id);
-    if (!$cancion) {
-        return $this->json(['message' => 'Canción no encontrada'], Response::HTTP_NOT_FOUND);
+    #[Route('/{id}', name: 'ver_cancion', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function verCancion(int $id, CancionRepository $cancionRepository): Response
+    {
+        $cancion = $cancionRepository->find($id);
+        
+        if (!$cancion) {
+            throw $this->createNotFoundException('Canción no encontrada');
+        }
+    
+        return $this->render('cancion/detalle_cancion.html.twig', [
+            'cancion' => $cancion,
+        ]);
     }
-
-    return $this->json([
-        'id' => $cancion->getId(),
-        'titulo' => $cancion->getTitulo(),
-        'duracion' => $cancion->getDuracion(),
-        'album' => $cancion->getAlbum(),
-        'autor' => $cancion->getAutor(),
-        'likes' => $cancion->getLikes(),
-        'fechaCreacion' => $cancion->getFechaCreacion()->format('Y-m-d H:i:s'), // Formatear la fecha
-        'anio' => $cancion->getAnio(),
-        'genero' => $cancion->getGenero() ? $cancion->getGenero()->getNombre() : null, // Obtener el nombre del género
-        'albumImagen' => $cancion->getAlbumImagen(),
-        'archivo' => $cancion->getArchivo(),
-        'usuario' => $cancion->getUsuario() ? $cancion->getUsuario()->getNombre() : null, // Obtener el nombre del usuario
-    ]);
-}
+    
+    
+    
+    
 
     #[Route('/crear', name: 'crear_cancion', methods: ['POST'])]
 public function crearCancion(Request $request, EntityManagerInterface $em, CancionRepository $cancionRepository): JsonResponse

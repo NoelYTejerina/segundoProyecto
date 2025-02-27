@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<div class="detalle-cancion-container">
+    <div class="detalle-cancion">
+<img src="{{ asset('imagenes/' ~ cancion.albumImagen) }}" 
+     alt="Portada {{ cancion.titulo }}" 
+     data-cancion-archivo="{{ cancion.archivo }}" 
+     data-cancion-titulo="{{ cancion.titulo }}" 
+     onclick="reproducirCancionIndividual(this)">
+
+        <div class="detalle-cancion-info">
+            <h2>{{ cancion.titulo }}</h2>
+            <p><strong>Artista:</strong> {{ cancion.autor }}</p>
+            <p><strong>Álbum:</strong> {{ cancion.album }}</p>
+            <p><strong>Género:</strong> {{ cancion.genero ? cancion.genero : 'Desconocido' }}</p>
+            <p><strong>Año:</strong> {{ cancion.anio }}</p>
+            <p><strong>Duración:</strong> {{ cancion.duracion }} seg</p>
+            <p><strong>Subida por:</strong> {{ cancion.usuario ? cancion.usuario : 'Sistema' }}</p>
+            <button class="reproducir-btn" onclick="reproducirCancion('{{ cancion.archivo }}', '{{ cancion.titulo }}')">▶ Reproducir Canción</button>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir el reproductor -->
+{% include 'reproductor/reproductor.html.twig' %}
+{% endblock %}

@@ -10,14 +10,12 @@
 
 <header>
     <div class="header-top">
-        <!-- Logo + Título en el centro -->
         <div class="logo-container">
             <img src="{{ asset('imagenes/logoSpoty.png') }}" alt="Spotify Logo">
-            <h1>MySpotify</h1>
+            <h1><a href="{{ path('home') }}">MySpotify</a></h1>
         </div>
 
-        <!-- Inicio de sesión a la derecha -->
-       <div class="session">
+        <div class="session">
             <img src="{{ asset('imagenes/iconosesion.png') }}" alt="Sesión">
             {% if app.user %}
                 <span>Hola, {{ app.user.nombre }}</span>
@@ -28,22 +26,19 @@
         </div>
     </div>
 
-    <!-- Barra de navegación centrada -->
     <nav>
         <ul>
             <li><a href="#">Canciones</a></li>
             <li><a href="#">Playlist</a></li>
-            <li><a href="#">Explorar</a></li>
-            {% if is_granted('ROLE_USER') %}
-                <li><a href="{{ path('crear_playlist') }}" class="btn btn-primary">+ Crear Playlist</a></li>
-            {% endif %}
+            <li><a href="#">Explorar</a></li>        
         </ul>
     </nav>
 
-    <!-- Buscador centrado -->
+    <!-- Buscador -->
     <div class="search-bar">
-        <input type="text" placeholder="Buscar...">
+        <input type="text" id="searchInput" placeholder="Buscar...">
         <button>Buscar</button>
+        <div id="searchResults" class="search-results"></div>
     </div>
 </header>
 
@@ -54,6 +49,14 @@
                 <li><a href="#">🎵 Canciones</a></li>
                 <li><a href="#">📂 Playlist</a></li>
                 <li><a href="#">🔍 Explorar</a></li>
+                {% if is_granted('ROLE_USER') %}
+                  <li>
+                      <a href="{{ path('playlist_mis_playlists') }}">📂 Mis Playlist</a>
+                  </li>
+                  <li>
+                      <a href="{{ path('playlist_crear_playlist_form') }}" class="btn btn-primary">+ Crear Playlist</a>
+                  </li>
+                {% endif %}
             </ul>
         </aside>
     {% endif %}
@@ -63,10 +66,12 @@
     </div>
 </div>
 
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <script>alert("{{ message }}");</script>
+    {% endfor %}
+{% endfor %}
 
-
-
-
-
+    <script src="{{ asset('script/buscador.js') }}" ></script> 
 </body>
 </html>

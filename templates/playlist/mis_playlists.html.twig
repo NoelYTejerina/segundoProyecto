@@ -1,0 +1,32 @@
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Mis Playlists{% endblock %}
+
+{% block content %}
+    <h2 class="titulo">Mis Playlists</h2>
+    
+    <div class="playlists-container">
+        {% for playlist in playlists %}
+            <div class="playlist-card-container">
+                <div class="playlist-card">
+                    <img src="{{ asset('imagenes/generos/' ~ playlist.nombre|replace({' ': '_'}) ~ '.jpg') }}" 
+                         alt="Imagen {{ playlist.nombre }}" 
+                         onclick="reproducirPlaylist({{ playlist.id }})">
+                    <div class="playlist-info">
+                        <h3>{{ playlist.nombre }}</h3>
+                        <p><strong>Canciones:</strong> {{ playlist.getPlaylistCanciones|length }}</p>
+                        <p><strong>Visibilidad:</strong> {{ playlist.visibilidad.value|capitalize }}</p>
+                        <a href="{{ path('playlist_ver_playlist', {id: playlist.id}) }}" class="detalle-link">Ver Playlist</a>
+                        <button class="reproducir-btn" onclick="reproducirPlaylist({{ playlist.id }})">▶ Reproducir</button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>No tienes playlists creadas.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Módulo del reproductor -->
+    {% include 'reproductor/reproductor.html.twig' %}
+{% endblock %}

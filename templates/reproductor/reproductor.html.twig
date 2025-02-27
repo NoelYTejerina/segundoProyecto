@@ -18,7 +18,7 @@
     const audioSource = document.getElementById("audioSource");
     const cancionActual = document.getElementById("cancion-actual");
     const prevBtn = document.getElementById("prevBtn");
-    const playPauseBtn = document.getElementById("playPauseBtn");
+    
     const nextBtn = document.getElementById("nextBtn");
 
     // Función para reproducir una canción
@@ -28,16 +28,21 @@ function reproducirCancionIndividual(element) {
     const cancionTitulo = element.getAttribute('data-cancion-titulo');
 
     // Obtener los detalles de la canción
-    fetch(`/cancion/${cancionId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.archivo && data.titulo) {
-                reproducirCancion(data.archivo, data.titulo);
-            } else {
-                console.error('Datos de la canción incompletos:', data);
-            }
-        })
-        .catch(error => console.error('Error al obtener la canción:', error));
+   fetch(`/cancion/${cancionId}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (!data.archivo) {
+            throw new Error("El archivo de la canción no está disponible.");
+        }
+        reproducirCancion(data.archivo, data.titulo);
+    })
+    .catch(error => console.error("Error al obtener la canción:", error));
+
 }
 
 // Función para reproducir una canción
@@ -83,15 +88,7 @@ function reproducirCancion(archivo, titulo) {
     // Event listeners para los botones del reproductor
     prevBtn.addEventListener("click", () => cambiarCancion(-1)); // Retrocede
     nextBtn.addEventListener("click", () => cambiarCancion(1)); // Avanza
-    playPauseBtn.addEventListener("click", () => {
-        if (audioPlayer.paused) {
-            audioPlayer.play();
-            playPauseBtn.textContent = "⏸";
-        } else {
-            audioPlayer.pause();
-            playPauseBtn.textContent = "▶";
-        }
-    });
+  
 
     // Reproduce la siguiente canción automáticamente al terminar la actual
     audioPlayer.addEventListener("ended", () => cambiarCancion(1));

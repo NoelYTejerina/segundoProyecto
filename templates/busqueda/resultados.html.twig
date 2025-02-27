@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Resultados de "{{ query }}"{% endblock %}
+
+{% block content %}
+<div class="resultados-container">
+    <h2>Resultados para "{{ query }}"</h2>
+
+    {% if canciones is empty and playlists is empty %}
+        <p>No se encontraron resultados.</p>
+    {% else %}
+        {% if canciones is not empty %}
+            <h3>🎵 Canciones</h3>
+            <div class="songs-container">
+                {% for cancion in canciones %}
+                    {% include 'cancion/cancion_card.html.twig' with {'cancion': cancion} %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if playlists is not empty %}
+            <h3>📂 Playlists</h3>
+            <div class="playlists-container">
+                {% for playlist in playlists %}
+                    {% include 'playlist/playlist_card.html.twig' with {'playlist': playlist} %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

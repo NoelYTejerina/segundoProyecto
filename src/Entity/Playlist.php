@@ -31,7 +31,7 @@ class Playlist
      */
     #[ORM\OneToMany(targetEntity: PlaylistCancion::class, mappedBy: 'playlist', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $playlistCanciones;
-    
+
 
     #[ORM\ManyToOne(targetEntity: Usuario::class, inversedBy: "playlistsCreadas")]
     #[ORM\JoinColumn(nullable: true, onDelete: "SET NULL")]
@@ -197,7 +197,7 @@ class Playlist
         return $this;
     }
 
-     /**
+    /**
      * Obtiene las canciones de la playlist.
      *
      * @return Collection<int, Cancion>
@@ -210,4 +210,33 @@ class Playlist
         }
         return $canciones;
     }
+ /**
+ * Establece las canciones de la playlist sin borrar las existentes.
+ *
+ * @param Collection<int, Cancion> $canciones
+ */
+public function setCanciones(Collection $canciones): static
+{
+    foreach ($canciones as $cancion) {
+        // Verificar si la canción ya está en la playlist
+        $existe = false;
+        foreach ($this->playlistCanciones as $playlistCancion) {
+            if ($playlistCancion->getCancion() === $cancion) {
+                $existe = true;
+                break;
+            }
+        }
+
+        // Si la canción no está, la agregamos
+        if (!$existe) {
+            $playlistCancion = new PlaylistCancion();
+            $playlistCancion->setPlaylist($this);
+            $playlistCancion->setCancion($cancion);
+            $this->playlistCanciones->add($playlistCancion);
+        }
+    }
+
+    return $this;
+}
+
 }

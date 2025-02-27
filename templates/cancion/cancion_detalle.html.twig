@@ -1,9 +1,0 @@
-<div id="cancion-detalle-container">
-    <h2>{{ cancion.titulo }}</h2>
-    <img src="{{ asset('imagenes/' ~ cancion.albumImagen) }}" alt="Portada {{ cancion.titulo }}">
-    <p><strong>Artista:</strong> {{ cancion.autor }}</p>
-    <p><strong>Álbum:</strong> {{ cancion.album }}</p>
-    <p><strong>Género:</strong> {{ cancion.genero ? cancion.genero.nombre : 'Desconocido' }}</p>
-    <p><strong>Año:</strong> {{ cancion.anio }}</p>
-    {% include 'reproductor.html.twig' %}
-</div>

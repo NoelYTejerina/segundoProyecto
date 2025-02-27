@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ playlist.nombre }} - Detalles{% endblock %}
+
+{% block content %}
+    <div class="playlist-detalle-container">
+        <div class="playlist-header">
+            <img src="{{ asset('imagenes/generos/' ~ playlist.nombre|replace({' ': '_'}) ~ '.jpg') }}" 
+                 alt="Imagen {{ playlist.nombre }}">
+            <h1>{{ playlist.nombre }}</h1>
+        </div>
+
+        <div class="playlist-info">
+            <p><strong>Visibilidad:</strong> {{ playlist.visibilidad.value|capitalize }}</p>
+            <p><strong>Creador:</strong> {{ playlist.propietario ? playlist.propietario.nombre : 'Sistema' }}</p>
+            <p><strong>Total Canciones:</strong> {{ playlist.getPlaylistCanciones|length }}</p>
+        </div>
+
+        <h2>Canciones en la Playlist</h2>
+        <div class="songs-container">
+            {% for playlistCancion in playlist.getPlaylistCanciones %}
+                {% include 'cancion/cancion_card.html.twig' with {'cancion': playlistCancion.cancion} %}
+            {% else %}
+                <p>Esta playlist no tiene canciones.</p>
+            {% endfor %}
+        </div>
+
+        <button class="reproducir-btn" onclick="reproducirPlaylist({{ playlist.id }})">▶ Reproducir Playlist</button>
+    </div>
+
+    <!-- Incluir el reproductor -->
+    {% include 'reproductor/reproductor.html.twig' %}
+{% endblock %}
