@@ -3,6 +3,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Usuario;
 use App\Entity\Perfil;
+use App\Service\LoggerActividadService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
@@ -16,11 +17,13 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UsuarioCrudController extends AbstractCrudController
 {
-    private $passwordHasher;
+    private UserPasswordHasherInterface $passwordHasher;
+    private LoggerActividadService $logger;
 
-    public function __construct(UserPasswordHasherInterface $passwordHasher)
+    public function __construct(UserPasswordHasherInterface $passwordHasher, LoggerActividadService $logger)
     {
         $this->passwordHasher = $passwordHasher;
+        $this->logger = $logger;
     }
 
     public static function getEntityFqcn(): string
@@ -80,6 +83,9 @@ class UsuarioCrudController extends AbstractCrudController
         }
 
         parent::persistEntity($entityManager, $entityInstance);
+
+        // 🔹 Registrar en el log la creación del usuario
+        $this->logger->log($entityInstance->getEmail(), "Usuario creado desde EasyAdmin");
     }
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
@@ -99,5 +105,21 @@ class UsuarioCrudController extends AbstractCrudController
         }
 
         parent::updateEntity($entityManager, $entityInstance);
+
+        // 🔹 Registrar en el log la edición del usuario
+        $this->logger->log($entityInstance->getEmail(), "Usuario actualizado desde EasyAdmin");
+    }
+
+    public function deleteEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if (!$entityInstance instanceof Usuario) {
+            return;
+        }
+
+        // 🔹 Registrar en el log la eliminación del usuario
+        $this->logger->log($entityInstance->getEmail(), "Usuario eliminado desde EasyAdmin");
+
+        $entityManager->remove($entityInstance);
+        $entityManager->flush();
     }
 }

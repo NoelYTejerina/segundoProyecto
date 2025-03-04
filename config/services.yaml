@@ -20,5 +20,7 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # Servicio para registrar actividades de usuario con Monolog
+    App\Service\LoggerActividadService:
+        arguments:
+            $actividadUsuarioLogger: '@monolog.logger.actividad_usuario'

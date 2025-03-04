@@ -2,6 +2,9 @@
 
 namespace App\Controller;
 
+use App\Service\LoggerActividadService;
+use Symfony\Bundle\SecurityBundle\Security;
+
 use App\Entity\Usuario;
 use App\Entity\Perfil;
 use App\Repository\UsuarioRepository;
@@ -63,42 +66,38 @@ class UsuarioController extends AbstractController
         ], $usuarios));
     }
 
-    /**
-     * Registra un nuevo usuario y crea automáticamente un perfil vacío asociado.
-     */
-    #[Route('/registrar', name: 'registrar_usuario', methods: ['POST'])]
-    public function registrarUsuario(Request $request, EntityManagerInterface $em, UsuarioRepository $usuarioRepository): JsonResponse
+    public function registrarUsuario(Request $request, EntityManagerInterface $em, UsuarioRepository $usuarioRepository, LoggerActividadService $logger): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
-
+    
         if (empty($email) || empty($data['password']) || empty($data['nombre'])) {
             return $this->json(['message' => 'Los campos email, password y nombre son obligatorios'], Response::HTTP_BAD_REQUEST);
         }
-
+    
         if ($usuarioRepository->findOneBy(['email' => $email])) {
             return $this->json(['message' => 'Este email ya está registrado'], Response::HTTP_CONFLICT);
         }
-
-        // Crear usuario
+    
         $usuario = new Usuario();
         $usuario->setEmail($email);
         $usuario->setNombre($data['nombre']);
         $usuario->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
-        $usuario->setFechaNacimiento(!empty($data['fecha_nacimiento']) ? new \DateTime($data['fecha_nacimiento']) : null);
-        $usuario->setRoles([$data['roles'] ?? 'ROLE_USER']); // Usamos setRoles() en lugar de setRol()
-
-        // Crear perfil vacío asociado al usuario
+        $usuario->setRoles([$data['roles'] ?? 'ROLE_USER']);
+    
         $perfil = new Perfil();
-        $perfil->setUsuario($usuario); // Relación OneToOne
-
-        // Persistimos usuario y perfil
+        $perfil->setUsuario($usuario);
+    
         $em->persist($usuario);
         $em->persist($perfil);
         $em->flush();
-
-        return $this->json(['message' => 'Usuario registrado correctamente con perfil vacío'], Response::HTTP_CREATED);
+    
+        // 🔹 Registrar en el log
+        $logger->log($email, "Usuario registrado exitosamente");
+    
+        return $this->json(['message' => 'Usuario registrado correctamente'], Response::HTTP_CREATED);
     }
+    
 
     /**
      * Edita un usuario existente.
@@ -126,27 +125,32 @@ class UsuarioController extends AbstractController
     }
 
     /**
-     * Elimina un usuario.
-     */
-    #[Route('/eliminar/{id}', name: 'eliminar_usuario', methods: ['DELETE'])]
-    public function eliminarUsuario(int $id, EntityManagerInterface $em, UsuarioRepository $usuarioRepository): JsonResponse
-    {
-        $usuario = $usuarioRepository->find($id);
+ * Elimina un usuario.
+ */
+#[Route('/eliminar/{id<\d+>}', name: 'eliminar_usuario', methods: ['DELETE'])]
+public function eliminarUsuario(int $id, EntityManagerInterface $em, UsuarioRepository $usuarioRepository, LoggerActividadService $logger): JsonResponse
+{
+    $usuario = $usuarioRepository->find($id);
 
-        if (!$usuario) {
-            return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        $em->remove($usuario);
-        $em->flush();
-
-        return $this->json(['message' => 'Usuario eliminado correctamente']);
+    if (!$usuario) {
+        return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
     }
 
-    /**
+    // 🔹 Registrar en el log antes de eliminar
+    $logger->log($usuario->getEmail(), "Eliminó su cuenta");
+
+    $em->remove($usuario);
+    $em->flush();
+
+    return $this->json(['message' => 'Usuario eliminado correctamente']);
+}
+
+    
+
+     /**
      * Obtiene los detalles de un usuario, incluyendo sus relaciones.
      */
-    #[Route('/{id}', name: 'detalle_usuario', methods: ['GET'])]
+    #[Route('/{id<\d+>}', name: 'detalle_usuario', methods: ['GET'])]
     public function verDetalleUsuario(int $id, UsuarioRepository $usuarioRepository): JsonResponse
     {
         $usuario = $usuarioRepository->find($id);
@@ -159,8 +163,8 @@ class UsuarioController extends AbstractController
             'id' => $usuario->getId(),
             'nombre' => $usuario->getNombre(),
             'email' => $usuario->getEmail(),
-            'fecha_nacimiento' => $usuario->getFechaNacimiento()?->format('Y-m-d'),
-            'roles' => $usuario->getRoles(), // Usamos getRoles() en lugar de getRol()
+            'fecha_nacimiento' => $usuario->getFechaNacimiento() ? $usuario->getFechaNacimiento()->format('Y-m-d') : null,
+            'roles' => $usuario->getRoles(),
             'perfil' => $usuario->getPerfil() ? [
                 'id' => $usuario->getPerfil()->getId(),
                 'foto' => $usuario->getPerfil()->getFoto(),
@@ -236,4 +240,19 @@ class UsuarioController extends AbstractController
     {
         return $this->json($usuarioRepository->findPlaylistsEscuchadasByUsuario($usuarioId));
     }
+
+    #[Route('/test-log', name: 'test_log', methods: ['GET'])]
+    public function testLog(LoggerActividadService $logger, Security $security): JsonResponse
+    {
+        $usuario = $security->getUser();
+        
+        if (!$usuario) {
+            return $this->json(['message' => 'Debes iniciar sesión para probar el log'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $logger->log($usuario->getUserIdentifier(), "Probando el log en Symfony");
+
+        return $this->json(['message' => 'Log registrado con éxito, revisa var/log/actividad_usuario.log']);
+    }
+
 }

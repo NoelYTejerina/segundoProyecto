@@ -3,6 +3,7 @@ namespace App\Controller;
 
 use App\Entity\Usuario;
 use App\Form\RegistrationFormType;
+use App\Service\LoggerActividadService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +17,8 @@ class RegistrationController extends AbstractController
     public function register(
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        LoggerActividadService $logger // 🔹 Inyectamos el servicio de logging
     ): Response {
         $usuario = new Usuario();
         $form = $this->createForm(RegistrationFormType::class, $usuario);
@@ -37,6 +39,9 @@ class RegistrationController extends AbstractController
             // Guardar el usuario
             $entityManager->persist($usuario);
             $entityManager->flush();
+
+            // 🔹 Registrar en el log la creación del usuario
+            $logger->log($usuario->getEmail(), "Usuario registrado desde formulario");
 
             // Redirigir al login
             return $this->redirectToRoute('app_login');
