@@ -57,6 +57,11 @@
                       <a href="{{ path('playlist_crear_playlist_form') }}" class="btn btn-primary">+ Crear Playlist</a>
                   </li>
                 {% endif %}
+                  {% if is_granted('ROLE_MANAGER') %}
+                  <li>
+                      <a href="{{ path('estadisticas') }}">📂 Estadisticas</a>
+                  </li>                
+                {% endif %}
             </ul>
         </aside>
     {% endif %}

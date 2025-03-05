@@ -1,0 +1,168 @@
+
+{% block title %}Dashboard de Estadísticas{% endblock %}
+
+{% block body %}
+<style>
+.container {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    padding: 20px;
+}
+
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    width: 100%;
+    height: 450px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    
+}
+
+.chart-container:hover {
+    transform: scale(1.05); /* Efecto de agrandamiento al pasar el ratón */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Sombra para resaltar el gráfico */
+}
+
+.chart-container h3 {
+    margin-bottom: 10px;
+}
+
+.chart-container.pie-chart canvas {
+    aspect-ratio: 1;
+    max-width: 300px;
+    max-height: 300px;
+}
+</style>
+
+<h2>Dashboard de Manager</h2>
+<div class="container">
+    <div class="chart-container">
+        <h3>Likes por Playlist</h3>
+        <canvas id="LikesChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <h3>Reproducciones por Playlist</h3>
+        <canvas id="ReproduccionesChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <h3>Canciones más reproducidas</h3>
+        <canvas id="ReproduccionesCancionChart"></canvas>
+    </div>
+    <div class="chart-container pie-chart">
+        <h3>Distribución de edades</h3>
+        <canvas id="EdadesChart"></canvas>
+    </div>
+    <div class="chart-container pie-chart">
+        <h3>Distribución de reproducciones por Estilo</h3>
+        <canvas id="EstilosChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+// 📌 Función genérica para generar gráficos
+function generarGrafico(idCanvas, tipo, label, labels, valores, colores = []) {
+    const ctx = document.getElementById(idCanvas).getContext("2d");
+    new Chart(ctx, {
+        type: tipo,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: valores,
+                backgroundColor: colores.length ? colores : "rgba(54, 162, 235, 0.5)",
+                borderColor: colores.length ? colores.map(c => c.replace("0.5", "1")) : "rgba(54, 162, 235, 1)",
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: tipo === "bar" || tipo === "horizontalBar" ? { y: { beginAtZero: true } } : {},
+            plugins: {
+                legend: { position: "top" }
+            }
+        }
+    });
+}
+
+// 📌 Fetch y generación de gráficos
+document.addEventListener("DOMContentLoaded", function () {
+
+    // 📌 Likes por Playlist (Gráfico de Líneas)
+    fetch("{{ path('likes_datos') }}")
+        .then(response => response.json())
+        .then(data => {
+            generarGrafico("LikesChart", "line", "Total Likes",
+                data.map(item => item.playlist),
+                data.map(item => item.totalLikes),
+                ["rgba(255, 99, 132, 0.5)", "rgba(54, 162, 235, 0.5)", "rgba(75, 192, 192, 0.5)"]
+            );
+        })
+        .catch(error => console.error("Error en Likes:", error));
+
+    // 📌 Reproducciones por Playlist (Gráfico de Barras Horizontales)
+    fetch("{{ path('estadisticas_datos') }}")
+        .then(response => response.json())
+        .then(data => {
+            generarGrafico("ReproduccionesChart", "bar", "Total Reproducciones",
+                data.map(item => item.playlist),
+                data.map(item => item.totalReproducciones),
+                ["rgba(153, 102, 255, 0.5)", "rgba(255, 159, 64, 0.5)", "rgba(255, 206, 86, 0.5)"]
+            );
+        })
+        .catch(error => console.error("Error en Reproducciones:", error));
+
+    // 📌 Canciones más reproducidas (Gráfico de Radar)
+    fetch("{{ path('canciones_reprod_datos') }}")
+        .then(response => response.json())
+        .then(data => {
+            generarGrafico("ReproduccionesCancionChart", "radar", "Total Reproducciones",
+                data.map(item => item.cancion),
+                data.map(item => item.reproduccionesXcancion),
+                ["rgba(255, 99, 132, 0.5)", "rgba(54, 162, 235, 0.5)", "rgba(255, 206, 86, 0.5)"]
+            );
+        })
+        .catch(error => console.error("Error en Canciones Reproducidas:", error));
+
+    // 📌 Distribución de edades (Gráfico de Donut)
+    fetch("{{ path('edad_datos') }}")
+        .then(response => response.json())
+        .then(data => {
+            let edades = data.reduce((acc, usuario) => {
+                acc[usuario.rango_edad] = (acc[usuario.rango_edad] || 0) + 1;
+                return acc;
+            }, {});
+            generarGrafico("EdadesChart", "doughnut", "Usuarios por edad",
+                Object.keys(edades),
+                Object.values(edades),
+                ["rgba(54, 162, 235, 0.5)", "rgba(255, 206, 86, 0.5)", "rgba(75, 192, 192, 0.5)"]
+            );
+        })
+        .catch(error => console.error("Error en Distribución de Edades:", error));
+
+    // 📌 Distribución de reproducciones por Estilo (Gráfico de Polar Area)
+    fetch("{{ path('estilos_reprod_datos') }}")
+        .then(response => response.json())
+        .then(data => {
+            generarGrafico("EstilosChart", "polarArea", "Reproducciones por Estilo",
+                data.map(item => item.estilo),
+                data.map(item => item.totalReproducciones),
+                ["rgba(255, 99, 132, 0.5)", "rgba(54, 162, 235, 0.5)", "rgba(255, 206, 86, 0.5)",
+                 "rgba(75, 192, 192, 0.5)", "rgba(153, 102, 255, 0.5)"]
+            );
+        })
+        .catch(error => console.error("Error en Distribución de Estilos:", error));
+
+});
+</script>
+
+{% endblock %}

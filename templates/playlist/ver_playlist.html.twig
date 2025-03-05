@@ -13,7 +13,7 @@
         <div class="playlist-info">
             <p><strong>Visibilidad:</strong> {{ playlist.visibilidad.value|capitalize }}</p>
             <p><strong>Creador:</strong> {{ playlist.propietario ? playlist.propietario.nombre : 'Sistema' }}</p>
-            <p><strong>Total Canciones:</strong> {{ playlist.getPlaylistCanciones|length }}</p>
+            <p><strong>Total Canciones:</strong> {{ playlist.getPlaylistCanciones|length }}</p>            
         </div>
 
         <h2>Canciones en la Playlist</h2>

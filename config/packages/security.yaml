@@ -21,7 +21,7 @@ security:
                 default_target_path: home  # Redirigir a la página de inicio después del login
             logout:
                 path: app_logout
-                target: app_login  # Redirigir a la página de login después del logout
+                target: home # Redirigir a la página de login después del logout
 
     access_control:
         - { path: ^/admin, roles: ROLE_ADMIN }

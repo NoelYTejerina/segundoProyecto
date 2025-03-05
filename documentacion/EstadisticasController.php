@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-
+#[IsGranted('ROLE_MANAGER')]
+#[Route('/manager')]
 final class EstadisticasController extends AbstractController
 {
     #[Route('/estadisticas', name: 'estadisticas')]

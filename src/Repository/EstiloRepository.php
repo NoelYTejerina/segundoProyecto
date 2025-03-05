@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+
 use App\Entity\Estilo;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -39,6 +40,17 @@ class EstiloRepository extends ServiceEntityRepository
             ->groupBy('e.id')
             ->orderBy('numFavoritos', 'DESC')
             ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function obtenerReproduccionesPorEstilo(): array
+    {
+        return $this->createQueryBuilder('e')
+            ->select('e.nombre AS estilo, SUM(c.reproducciones) AS totalReproducciones')
+            ->join('e.canciones', 'c')
+            ->groupBy('e.id')
+            ->orderBy('totalReproducciones', 'DESC')
             ->getQuery()
             ->getResult();
     }
