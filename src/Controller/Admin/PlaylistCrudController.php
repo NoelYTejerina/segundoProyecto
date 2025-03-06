@@ -41,7 +41,7 @@ class PlaylistCrudController extends AbstractCrudController
                 VisibilidadPlaylist::cases()
             )),
 
-            IntegerField::new('likes', 'Número de Likes')->setFormTypeOption('disabled', true),
+            IntegerField::new('likes', 'Número de Likes'),
             AssociationField::new('propietario', 'Propietario'),
 
             // ✅ PERMITE AÑADIR Y VER CANCIONES USANDO EL BOTÓN + NUEVO

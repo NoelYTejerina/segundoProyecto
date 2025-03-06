@@ -186,4 +186,6 @@ public function editarCancion(int $id, Request $request, EntityManagerInterface 
     {
         return $this->json($cancionRepository->findPlaylistsByCancion($cancionId));
     }
+
+    
 }
